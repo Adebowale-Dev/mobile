@@ -1,98 +1,97 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+import { useCallback, useEffect, useState } from 'react';
+import { Image, ScrollView, Text, View, RefreshControl } from 'react-native';
+import { router } from 'expo-router';
+import { api, useSession, money, type Service, type Settings } from '../lib/api';
+import { Button, styles } from '../components/saloon-ui';
+export default function Home() {
+  const { user } = useSession();
+  const [services, setServices] = useState<Service[]>([]);
+  const [settings, setSettings] = useState<Settings>();
+  const [category, setCategory] = useState('All');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [s, p] = await Promise.all([api<Service[]>('/services'), api<Settings>('/settings')]);
+      setServices(s);
+      setSettings(p);
+      setError('');
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  useEffect(() => {
+    const initial = setTimeout(() => void load(), 0);
+    return () => clearTimeout(initial);
+  }, [load]);
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+    >
+      <Text style={styles.sub}>GOOD HAIR. GOOD ENERGY.</Text>
+      <Text style={styles.heading}>Your next look,{'\n'}beautifully booked.</Text>
+      <Text style={styles.sub}>
+        {user
+          ? `Welcome back, ${user.name.split(' ')[0]}.`
+          : 'Find your style and let us take care of the rest.'}
+      </Text>
+      <View style={styles.row}>
+        <Button
+          title={user ? 'My appointments' : 'Log in / Register'}
+          onPress={() => router.push(user ? '/bookings' : '/auth')}
+        />
+        {user && <Button title="Profile" secondary onPress={() => router.push('/profile')} />}
+      </View>
+      {error && (
+        <>
+          <Text style={styles.error}>{error}</Text>
+          <Button title="Retry" onPress={load} />
+        </>
+      )}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 8 }}
+      >
+        {['All', ...new Set(services.map((s) => s.category)), 'Favorites'].map((c) => (
+          <Button key={c} title={c} secondary={c !== category} onPress={() => setCategory(c)} />
+        ))}
+      </ScrollView>
+      <Text style={styles.title}>The service menu</Text>
+      {services
+        .filter(
+          (s) =>
+            category === 'All' ||
+            (category === 'Favorites' ? user?.favorites.includes(s._id) : s.category === category),
+        )
+        .map((s) => (
+          <View key={s._id} style={styles.card}>
+            <Image source={{ uri: s.photo }} style={styles.photo} accessibilityLabel={s.name} />
+            <Text style={styles.sub}>
+              {s.category.toUpperCase()} · {s.duration} MIN
+            </Text>
+            <Text style={styles.title}>{s.name}</Text>
+            <Text style={styles.sub}>{s.description}</Text>
+            <Text style={styles.title}>{money(s.price, settings?.currency)}</Text>
+            <Button
+              title="View & book"
+              onPress={() => router.push({ pathname: '/book', params: { serviceId: s._id } })}
+            />
+          </View>
+        ))}
+      {!loading && !services.length && (
+        <Text style={styles.sub}>No services available yet. Please check back soon.</Text>
+      )}
+      {category === 'Favorites' && !services.some((s) => user?.favorites.includes(s._id)) && (
+        <Text style={styles.sub}>
+          Your favorite looks will appear here. Save one from its booking page.
+        </Text>
+      )}
+    </ScrollView>
   );
 }
-
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
-});

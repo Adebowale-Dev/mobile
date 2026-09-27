@@ -1,56 +1,18 @@
-# Welcome to your Expo app 👋
+# SALOON BOOK mobile app
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Run these commands inside `mobile/`:
 
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```powershell
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+If `.env` is missing, copy `.env.example` to it. Set `EXPO_PUBLIC_API_URL` to your computer's reachable LAN API URL, for example `http://192.168.1.100:4000/api`. This is public configuration, not a place for secrets. Never use `localhost` for a physical phone's API connection.
 
-### Other setup steps
+Start the database and backend first. Keep phone and computer on the same Wi-Fi, install an SDK 57-compatible Expo Go build, and scan the terminal QR code. Verify `http://YOUR_LAN_IP:4000/health` opens in the phone browser. Restart Expo after changing environment variables.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+For Expo connectivity issues, try `npx expo start --tunnel`. This tunnels Metro only; the backend must still be reachable independently.
 
-## Learn more
+Checks: `npm run lint` and `npx tsc --noEmit`. Use `npx expo install` for Expo-managed dependencies. On PowerShell systems that block scripts, use `npm.cmd` / `npx.cmd`.
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+See [the project setup guide](../backend/README.md) for backend startup, phone testing, authentication and the full acceptance checklist. Dependencies, environment files, and formatting configuration live within this folder.
